@@ -27,7 +27,7 @@ parser.KeepUnmatched = true;
 parser.PartialMatching = false;
 
 addRequired(parser,'lat',@isnumeric)
-addRequired(parser,'t',@isnumeric)
+addRequired(parser,'t',@(t) all(t<=0) && all(t>-250000))
 addParameter(parser,'e2010','a',@ischar)
 
 parse(parser,lat,t,varargin{:})
