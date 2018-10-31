@@ -11,11 +11,11 @@
 % o: Obliquity (degrees), vector or scalar
 % w: Argument of the perigree/perihelion (degrees), vector or scalar
 % 'I0': solar constant (default 1368) W/m2
-% 'mode': 'instant' or 'daily', determines whether or not to average
-%   daily insolation at a latitude or to calculate instantaneous insolation
-%   at a latitutde and longitude. 
+% 'mode': 'instant', 'daily', or 'annual', determines whether or not to 
+%   average daily insolation at a latitude or to calculate instantaneous 
+%   insolation at a latitutde and longitude. 
 % 'slon': Solar longitude (degrees). For NH: 0-spring 90-summer 180-fall     
-%   270-winter
+%   270-winter. for 'annual' mode, will be ignored
 % 'hour': Hour angle (degrees) (specify only for 'instant' mode), must be
 %   scalar
 % 'lon': longitude at which to compute insolation (specify only for 
@@ -23,6 +23,9 @@
 % 
 % OUT:
 % I: insolation
+%
+% TO DO:
+% - implement computation of average annual insolation
 %
 % Adrian Tasistro-Hart, 05.09.2018
 
@@ -80,6 +83,7 @@ if nlat == 1
     else
         assert(nw == norbit,'inappropriate number of precession values')
     end
+    lat = lat*ones(norbit,1);
 % varying latitudes
 elseif nlat > 1
     assert(ne == 1 && no == 1 && nw == 1, ...
@@ -92,12 +96,16 @@ else
     error('must specify at least one latitude')
 end
 
+% number of output
+nout = max([norbit,nlat]);
+
 % validate mode
 mode = validatestring(mode,{'daily','instant'});
+
 % if we need hour, lon parameters, make sure they're the correct size
 if strcmp(mode,'instant')
-    hour = hour*ones(max([norbit,nlat]),1);
-    lon = lon*ones(max([norbit,nlat]),1);
+    hour = hour*ones(nout,1);
+    lon = lon*ones(nout,1);
 end
 
 %% convert values and compute insolation
@@ -117,13 +125,36 @@ delta = asin(sin(o)*sin(slon));
 
 switch mode
     case 'instant'
-    I = I0 * R .* ...
-        (sin(lat).*sin(delta) + cos(lat).*cos(delta).*cos(lon-hour));
+        I = I0 * R .* ...
+            (sin(lat).*sin(delta) + cos(lat).*cos(delta).*cos(lon-hour));
+        % must specify negativity of insolation during nighttime 
+        I(I < 0) = 0;
+    
     case 'daily'
-    % hour angle at sunset
-    H = real(acos(-tan(lat)*tan(delta)));
-    I = I0/pi * R .* ...
-        (H.*sin(lat).*sin(delta) + cos(lat).*cos(delta).*sin(H));
+        % hour angle at sunset
+        H = real(acos(-tan(lat).*tan(delta)));
+        I = I0/pi * R .* ...
+            (H.*sin(lat).*sin(delta) + cos(lat).*cos(delta).*sin(H));
+%         I = I0/pi*R.*sin(lat).*sin(w).*sin(slon);
+    
+    % for average annual insolation, just sum over solar angles
+    case 'annual'
+%         slon = linspace(0,360,100);
+%         % eccentricity component
+%         [e,slon] = meshgrid(e,slon);
+%         o = meshgrid(o,slon);
+%         w = meshgrid(w,slon);
+%         lat = meshgrid(w,slon);
+%         
+%         R = ((1+e.*cos(slon(ii)-w))./(1-e.^2)).^2;
+%         % solar declination
+%         delta = asin(sin(o)*sin(slon(ii)));
+%         H = real(acos(-tan(lat)*tan(delta)));
+%         I = I0/pi * R .* ...
+%             (H.*sin(lat).*sin(delta) + cos(lat).*cos(delta).*sin(H));
+%         I = 
+       
+        
 end
 
 end

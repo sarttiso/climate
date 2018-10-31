@@ -47,8 +47,11 @@ nt = length(t);
 e2010 = validatestring(e2010,{'a','b','c','d'});
 
 %% load data and prepare for insolation.m
-la04 = load('INSOLN.LA2004.BTL.250.txt');
-la10 = load(sprintf('La2010%s_ecc3L.dat',e2010));
+la04 = fread(fopen('laskar2004.bin','r'),'double');
+la04 = reshape(la04,length(la04)/4,4);
+
+la10 = fread(fopen(sprintf('laskar2010%s.bin',e2010),'r'),'double');
+la10 = reshape(la10,length(la10)/2,2);
 
 idx = la04(:,1) >= min(t) & la04(:,1) <= max(t);
 e = la10(idx,2);
